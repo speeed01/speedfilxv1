@@ -19,17 +19,16 @@ import requests
 import webbrowser
 import os
 
-# ==================== متغيرات API الخاصة ====================
+
 TMDB_API_KEY = "9f9c93a0d3124a3119c69e921fec2979"
 ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5ZjljOTNhMGQzMTI0YTMxMTljNjllOTIxZmVjMjk3OSIsIm5iZiI6MTczNTc4MjY0Ni4wMDQzMDUsInN1YiI6IjY3NzBjZTA5ZTlmNzIxOTNhYTIwN2JjNyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.e7ct7Igs8y-7ci9WNlOfGLK6m-8ODdaeHdpbGfs4mYc"
 
-# ==================== الإعدادات ====================
+
 BASE_URL = "https://api.themoviedb.org/3"
 IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
 
-# ==================== فئات محسنة ====================
 class MovieCard(ButtonBehavior, BoxLayout):
-    """بطاقة فيلم محسنة"""
+    
     title = StringProperty('')
     year = StringProperty('')
     rating = StringProperty('')
@@ -44,7 +43,7 @@ class MovieCard(ButtonBehavior, BoxLayout):
         self.padding = [8, 8, 8, 8]
         self.spacing = 8
         
-        # خلفية أنيقة
+        
         with self.canvas.before:
             Color(0.12, 0.12, 0.12, 1)
             self.bg = RoundedRectangle(
@@ -61,7 +60,7 @@ class MovieCard(ButtonBehavior, BoxLayout):
         
         self.bind(pos=self.update_graphics, size=self.update_graphics)
         
-        # صورة مع تأثير hover
+        
         self.img = AsyncImage(
             source=self.image_url or "https://via.placeholder.com/190x220/222/fff?text=SpeedFlix",
             size_hint=(1, 0.65),
@@ -71,7 +70,7 @@ class MovieCard(ButtonBehavior, BoxLayout):
         )
         self.add_widget(self.img)
         
-        # شريط التشغيل
+        
         play_overlay = Button(
             text='▶',
             size_hint=(1, 0.1),
@@ -82,7 +81,7 @@ class MovieCard(ButtonBehavior, BoxLayout):
         )
         self.img.add_widget(play_overlay)
         
-        # العنوان
+        
         self.title_label = Label(
             text=self.title,
             size_hint=(1, 0.15),
@@ -98,7 +97,7 @@ class MovieCard(ButtonBehavior, BoxLayout):
         self.title_label.bind(size=self.title_label.setter('text_size'))
         self.add_widget(self.title_label)
         
-        # المعلومات
+        
         info_box = BoxLayout(size_hint=(1, 0.1), spacing=10)
         
         self.rating_label = Label(
@@ -126,21 +125,21 @@ class MovieCard(ButtonBehavior, BoxLayout):
         self.border.size = [self.size[0]+2, self.size[1]+2]
     
     def on_press(self):
-        """تأثير عند الضغط"""
+        
         anim = Animation(opacity=0.7, duration=0.1) + Animation(opacity=1, duration=0.1)
         anim.start(self.img)
         
-        # عرض التفاصيل
+        
         app = App.get_running_app()
         app.show_movie_details(self.movie_id)
 
 class SpeedFlixApp(App):
-    """التطبيق الرئيسي المحسن"""
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.title = "SpeedFlix - مشاهدة أفلام ومسلسلات"
         
-        # استخدام أيقونة محلية
+        
         try:
             if os.path.exists("icon.png"):
                 self.icon = "icon.png"
@@ -149,24 +148,24 @@ class SpeedFlixApp(App):
         except:
             self.icon = "https://img.icons8.com/color/96/000000/netflix.png"
         
-        # بيانات التخزين المؤقت
+        
         self.cache = {}
         self.favorites = []
     
     def build(self):
         Window.clearcolor = (0.08, 0.08, 0.08, 1)
         
-        # التصميم الرئيسي
+        
         self.root = BoxLayout(orientation='vertical')
         
-        # الهيدر مع شعار
+        
         header = BoxLayout(size_hint=(1, 0.12), padding=[15, 0])
         
         with header.canvas.before:
             Color(0.1, 0.1, 0.1, 1)
             Rectangle(pos=header.pos, size=header.size)
         
-        # شعار التطبيق
+        
         logo_box = BoxLayout(size_hint=(0.3, 1))
         logo = Label(
             text="🎬 SPEEDFLIX",
@@ -176,7 +175,7 @@ class SpeedFlixApp(App):
         )
         logo_box.add_widget(logo)
         
-        # شريط البحث
+        
         search_box = BoxLayout(size_hint=(0.7, 1), spacing=10)
         
         self.search_input = TextInput(
@@ -207,7 +206,7 @@ class SpeedFlixApp(App):
         header.add_widget(logo_box)
         header.add_widget(search_box)
         
-        # التبويبات
+        
         self.tab_container = BoxLayout(size_hint=(1, 0.08))
         
         tabs = [
@@ -229,7 +228,7 @@ class SpeedFlixApp(App):
             tab.bind(on_press=lambda instance, tid=tab_id: self.switch_tab(tid))
             self.tab_container.add_widget(tab)
         
-        # منطقة المحتوى
+        
         self.content_area = ScrollView()
         self.content_grid = GridLayout(
             cols=2,
@@ -240,22 +239,22 @@ class SpeedFlixApp(App):
         self.content_grid.bind(minimum_height=self.content_grid.setter('height'))
         self.content_area.add_widget(self.content_grid)
         
-        # تجميع الواجهة
+        
         self.root.add_widget(header)
         self.root.add_widget(self.tab_container)
         self.root.add_widget(self.content_area)
         
-        # تحميل البيانات الأولية
+        
         Clock.schedule_once(lambda dt: self.load_initial_data(), 0.5)
         
         return self.root
     
     def load_initial_data(self):
-        """تحميل البيانات عند بدء التشغيل"""
+        
         self.load_trending_movies()
     
     def load_trending_movies(self):
-        """تحميل الأفلام الرائجة باستخدام Access Token"""
+        
         url = f"{BASE_URL}/trending/movie/week"
         
         headers = {
@@ -273,7 +272,7 @@ class SpeedFlixApp(App):
             self.display_movies(movies)
         
         def on_failure(req, error):
-            # محاولة باستخدام API Key كبديل
+            
             params_with_key = {
                 'api_key': TMDB_API_KEY,
                 'language': 'ar-SA',
@@ -289,7 +288,7 @@ class SpeedFlixApp(App):
         UrlRequest(url, req_headers=headers, req_params=params, on_success=on_success, on_failure=on_failure)
     
     def display_movies(self, movies):
-        """عرض الأفلام في الشبكة"""
+        
         self.content_grid.clear_widgets()
         
         if not movies:
@@ -311,12 +310,12 @@ class SpeedFlixApp(App):
             )
             self.content_grid.add_widget(card)
         
-        # تعديل الارتفاع
+        
         rows = (len(movies) + 1) // 2
         self.content_grid.height = rows * 320
     
     def do_search(self, instance):
-        """تنفيذ البحث باستخدام Access Token"""
+        
         query = self.search_input.text.strip()
         if len(query) < 2:
             return
@@ -339,7 +338,7 @@ class SpeedFlixApp(App):
             self.display_movies(movies)
         
         def on_failure(req, error):
-            # محاولة باستخدام API Key كبديل
+            
             params_with_key = {
                 'api_key': TMDB_API_KEY,
                 'language': 'ar-SA',
@@ -356,22 +355,21 @@ class SpeedFlixApp(App):
         UrlRequest(url, req_headers=headers, req_params=params, on_success=on_success, on_failure=on_failure)
     
     def switch_tab(self, tab_id):
-        """تبديل التبويبات"""
-        # تحديث ألوان الأزرار
+        
         for btn in self.tab_container.children:
             if tab_id in btn.text.lower():
                 btn.background_color = (1, 0, 0, 1)
             else:
                 btn.background_color = (0.15, 0.15, 0.15, 1)
         
-        # تحميل المحتوى المناسب
+       
         if tab_id == "movies":
             self.load_trending_movies()
         elif tab_id == "favorites":
             self.show_favorites()
     
     def show_movie_details(self, movie_id):
-        """عرض تفاصيل الفيلم باستخدام Access Token"""
+        
         url = f"{BASE_URL}/movie/{movie_id}"
         
         headers = {
@@ -382,12 +380,12 @@ class SpeedFlixApp(App):
         params = {'language': 'ar-SA'}
         
         def on_success(req, result):
-            # نافذة تفاصيل مبسطة
+            
             popup = ModalView(size_hint=(0.9, 0.8), background_color=(0, 0, 0, 0.7))
             
             content = BoxLayout(orientation='vertical', padding=20, spacing=15)
             
-            # عنوان الفيلم
+            
             title = Label(
                 text=result.get('title', ''),
                 font_size=22,
@@ -396,7 +394,7 @@ class SpeedFlixApp(App):
                 size_hint=(1, 0.1)
             )
             
-            # زر التشغيل
+            
             play_btn = Button(
                 text="▶️ مشاهدة الآن",
                 size_hint=(1, 0.15),
@@ -422,7 +420,7 @@ class SpeedFlixApp(App):
             popup.open()
         
         def on_failure(req, error):
-            # محاولة باستخدام API Key كبديل
+            
             params_with_key = {'api_key': TMDB_API_KEY, 'language': 'ar-SA'}
             UrlRequest(
                 url, 
@@ -434,18 +432,17 @@ class SpeedFlixApp(App):
         UrlRequest(url, req_headers=headers, req_params=params, on_success=on_success, on_failure=on_failure)
     
     def play_movie(self, movie_id):
-        """فتح الفيلم للعرض"""
-        # استخدام مصادر متعددة
+        
         sources = [
             f"https://vidsrc.me/embed/movie?tmdb={movie_id}",
             f"https://2embed.org/embed/movie?tmdb={movie_id}",
             f"https://autoembed.co/movie/tmdb/{movie_id}"
         ]
         
-        webbrowser.open(sources[0])  # فتح المصدر الأول
+        webbrowser.open(sources[0])  
     
     def show_favorites(self):
-        """عرض المفضلة"""
+        
         self.content_grid.clear_widgets()
         
         if not self.favorites:
@@ -458,7 +455,7 @@ class SpeedFlixApp(App):
             self.content_grid.add_widget(empty_label)
     
     def show_error(self, message):
-        """عرض رسالة خطأ"""
+        
         error_popup = ModalView(size_hint=(0.7, 0.3))
         error_content = BoxLayout(orientation='vertical', padding=20)
         error_content.add_widget(Label(text=message, color=(1, 0, 0, 1)))
