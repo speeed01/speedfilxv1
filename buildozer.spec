@@ -1,33 +1,57 @@
-[app]
-title = SpeedFlix
-package.name = speedflix
-package.domain = org.speedflix
+name: Build APK
 
-source.dir = .
-source.include_exts = py,png,jpg,kv,json
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-version = 1.3
+jobs:
+  build:
+    # ⬅️ هذا هو الحل الحقيقي
+    runs-on: ubuntu-22.04
 
-# ❌ لا libffi
-requirements = python3,kivy,requests
+    steps:
+    - uses: actions/checkout@v4
 
-orientation = portrait
-fullscreen = 1
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
 
-icon.filename = icon.png
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          build-essential \
+          git \
+          zip \
+          unzip \
+          openjdk-17-jdk \
+          libffi-dev \
+          libssl-dev \
+          libsqlite3-dev \
+          zlib1g-dev \
+          libncurses5 \
+          libtinfo5
 
-android.permissions = INTERNET
+    - name: Install Buildozer
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer cython==0.29.36
 
-android.api = 33
-android.minapi = 21
-android.ndk = 25b
-android.build_tools_version = 36.0.0
+    - name: Clean build cache
+      run: |
+        rm -rf ~/.buildozer
+        rm -rf .buildozer
 
-# معماريّة واحدة فقط
-android.archs = arm64-v8a
+    - name: Build APK
+      env:
+        JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+      run: |
+        buildozer android debug
 
-# تثبيت فرع مستقر
-p4a.branch = master
-
-[buildozer]
-log_level = 2
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: SpeedFlix-APK
+        path: bin/*.apk
