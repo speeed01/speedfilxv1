@@ -10,76 +10,77 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y \
-          build-essential \
-          git \
-          zip \
-          unzip \
-          openjdk-17-jdk \
-          libffi-dev \
-          libssl-dev \
-          libsqlite3-dev \
-          zlib1g-dev \
-          libncurses5 \
-          libtinfo5
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
 
-    - name: Force Java 17
-      run: |
-        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-        echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> $GITHUB_PATH
-        java -version
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git zip unzip curl \
+            build-essential \
+            autoconf libtool pkg-config \
+            libffi-dev libssl-dev \
+            libsqlite3-dev zlib1g-dev \
+            libncurses5 libtinfo5 \
+            openjdk-17-jdk
 
-    - name: Install Buildozer
-      run: |
-        python -m pip install --upgrade pip
-        pip install buildozer cython==0.29.36
+      - name: Install Buildozer & Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer cython==0.29.36
 
-    - name: Clean build cache
-      run: |
-        rm -rf ~/.buildozer
-        rm -rf .buildozer
+      - name: Clean previous builds
+        run: |
+          rm -rf ~/.buildozer
+          rm -rf .buildozer
 
-    - name: Setup Android SDK
-      env:
-        ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
-      run: |
-        mkdir -p $ANDROID_HOME
-        cd /tmp
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q commandlinetools-linux-11076708_latest.zip
+      - name: Install Android SDK (stable)
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+        run: |
+          mkdir -p $ANDROID_HOME
+          cd /tmp
 
-        mkdir -p $ANDROID_HOME/cmdline-tools
-        mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          curl -o cmdline.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline.zip
 
-        mkdir -p $ANDROID_HOME/tools/bin
-        ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
+          mkdir -p $ANDROID_HOME/cmdline-tools/latest
+          mv cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
 
-        yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
 
-        $ANDROID_HOME/tools/bin/sdkmanager \
-          "platform-tools" \
-          "platforms;android-33" \
-          "build-tools;33.0.2"
+          yes | sdkmanager --licenses
 
-    - name: Build APK
-      env:
-        JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-      run: |
-        buildozer android debug
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: SpeedFlix-APK
-        path: bin/*.apk
+      - name: Build APK with Buildozer
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpeedFlix-APK
+          path: |
+            bin/*.apk
+
