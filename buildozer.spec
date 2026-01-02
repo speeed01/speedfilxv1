@@ -6,10 +6,10 @@ package.domain = org.speedflix
 source.dir = .
 source.include_exts = py,png,jpg,kv,json
 
-version = 1.2
+version = 1.3
 
-# الاعتماديات الضرورية فقط
-requirements = python3,kivy,requests,libffi
+# ❌ لا libffi
+requirements = python3,kivy,requests
 
 orientation = portrait
 fullscreen = 1
@@ -23,10 +23,10 @@ android.minapi = 21
 android.ndk = 25b
 android.build_tools_version = 36.0.0
 
-# 🔥 معماريّة واحدة فقط (الحل الحقيقي)
+# معماريّة واحدة فقط
 android.archs = arm64-v8a
 
-# استخدام python-for-android الحديث
+# تثبيت فرع مستقر
 p4a.branch = master
 
 [buildozer]
