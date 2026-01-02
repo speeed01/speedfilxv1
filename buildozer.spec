@@ -20,7 +20,7 @@ android.permissions = INTERNET
 android.api = 33
 android.minapi = 21
 
-# 🔥 لا 36.x نهائيًا
+# هكا يمشي خليها 
 android.build_tools_version = 33.0.2
 
 android.ndk = 25b
