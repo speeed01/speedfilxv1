@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on:
@@ -34,7 +35,6 @@ jobs:
           libncurses6 \
           libtinfo6
 
-        # Fix libncurses5 for Ubuntu 24.04
         sudo ln -s /lib/x86_64-linux-gnu/libncurses.so.6 /lib/x86_64-linux-gnu/libncurses.so.5 || true
         sudo ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/x86_64-linux-gnu/libtinfo.so.5 || true
 
@@ -49,7 +49,6 @@ jobs:
         ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
       run: |
         mkdir -p $ANDROID_HOME
-
         cd /tmp
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
         unzip -q commandlinetools-linux-11076708_latest.zip
@@ -57,14 +56,11 @@ jobs:
         mkdir -p $ANDROID_HOME/cmdline-tools
         mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
 
-        # Create legacy sdkmanager path required by Buildozer
         mkdir -p $ANDROID_HOME/tools/bin
         ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
 
-        # Accept licenses
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 
-        # Install required SDK components
         $ANDROID_HOME/tools/bin/sdkmanager \
           "platform-tools" \
           "platforms;android-33" \
@@ -74,6 +70,7 @@ jobs:
       env:
         ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
         ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+        JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       run: |
         buildozer android debug
 
