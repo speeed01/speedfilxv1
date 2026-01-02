@@ -34,7 +34,7 @@ jobs:
           libncurses6 \
           libtinfo6
 
-        # حل مشكلة libncurses5 على Ubuntu 24.04
+        # حل مشكلة libncurses5 في Ubuntu 24.04
         sudo ln -s /lib/x86_64-linux-gnu/libncurses.so.6 /lib/x86_64-linux-gnu/libncurses.so.5 || true
         sudo ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/x86_64-linux-gnu/libtinfo.so.5 || true
 
@@ -43,7 +43,33 @@ jobs:
         python -m pip install --upgrade pip
         pip install buildozer cython==0.29.36
 
+    - name: Setup Android SDK and accept licenses
+      env:
+        ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+      run: |
+        mkdir -p $ANDROID_HOME
+
+        # تثبيت cmdline-tools
+        cd /tmp
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q commandlinetools-linux-11076708_latest.zip
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+        # قبول جميع الرخص
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+        # تثبيت الأدوات المطلوبة
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;36.0.0"
+
     - name: Build APK with Buildozer
+      env:
+        ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
       run: |
         buildozer android debug
 
