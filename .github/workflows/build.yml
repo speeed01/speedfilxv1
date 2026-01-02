@@ -1,4 +1,3 @@
-
 name: Build APK
 
 on:
@@ -8,7 +7,6 @@ on:
 
 jobs:
   build:
-    # ⬅️ هذا هو الحل الحقيقي
     runs-on: ubuntu-22.04
 
     steps:
@@ -44,6 +42,31 @@ jobs:
       run: |
         rm -rf ~/.buildozer
         rm -rf .buildozer
+
+    - name: Setup Android SDK
+      env:
+        ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+      run: |
+        mkdir -p $ANDROID_HOME
+        cd /tmp
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q commandlinetools-linux-11076708_latest.zip
+
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+        mkdir -p $ANDROID_HOME/tools/bin
+        ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
+
+        # 🔥 قبول كل الرخص (بدون سؤال)
+        yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+
+        # 🔥 أدوات متوافقة فقط
+        $ANDROID_HOME/tools/bin/sdkmanager \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2"
 
     - name: Build APK
       env:
