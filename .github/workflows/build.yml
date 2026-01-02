@@ -1,0 +1,79 @@
+name: Build SpeedFlix APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          git \
+          python3-pip \
+          openjdk-11-jdk \
+          zlib1g-dev \
+          ccache \
+          libncurses5 \
+          libncursesw5 \
+          unzip \
+          zip \
+          libssl-dev \
+          libffi-dev
+    
+    - name: Install Python Dependencies
+      run: |
+        pip3 install --upgrade pip wheel setuptools
+        pip3 install buildozer cython==0.29.33 pillow
+    
+    - name: Create Icon if Missing
+      run: |
+        if [ ! -f "icon.png" ]; then
+          echo "إنشاء أيقونة افتراضية..."
+          wget -O icon.png "https://img.icons8.com/color/512/000000/film-reel.png"
+        fi
+    
+    - name: Check Buildozer Spec
+      run: |
+        echo "✅ التحقق من ملف buildozer.spec..."
+        if [ -f "buildozer.spec" ]; then
+          echo "✓ الملف موجود"
+          # التحقق من عدم وجود أسطر مكررة
+          echo "التحقق من التكرارات..."
+          duplicates=$(grep -n "android.allow_backup" buildozer.spec | wc -l)
+          if [ $duplicates -gt 1 ]; then
+            echo "⚠️  يوجد تكرار في android.allow_backup"
+            # إصلاح الملف تلقائياً
+            awk '!seen[$0]++' buildozer.spec > buildozer.spec.tmp && mv buildozer.spec.tmp buildozer.spec
+            echo "✓ تم إصلاح الملف"
+          fi
+        else
+          echo "✗ الملف غير موجود، سيتم إنشاؤه"
+          buildozer init
+        fi
+    
+    - name: Build APK
+      run: |
+        echo "بدء بناء APK..."
+        buildozer -v android clean
+        buildozer -v android debug
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: SpeedFlix-APK
+        path: bin/*.apk
+        retention-days: 7
