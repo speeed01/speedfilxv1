@@ -1,4 +1,4 @@
-
+          
 name: Build SpeedFlix APK
 
 on:
@@ -12,6 +12,35 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Check Files Before Build
+      run: |
+        echo "📁 التحقق من الملفات الموجودة..."
+        echo "المسار الحالي: $(pwd)"
+        echo "قائمة الملفات:"
+        ls -la
+        
+        echo ""
+        echo "=== التحقق من buildozer.spec ==="
+        if [ -f "buildozer.spec" ]; then
+          echo "✅ buildozer.spec موجود"
+          echo "حجم الملف: $(wc -l < buildozer.spec) سطر"
+          echo "المحتوى (الأول 10 أسطر):"
+          head -10 buildozer.spec
+        else
+          echo "❌ buildozer.spec غير موجود!"
+          exit 1
+        fi
+        
+        echo ""
+        echo "=== التحقق من main.py ==="
+        if [ -f "main.py" ]; then
+          echo "✅ main.py موجود"
+          echo "حجم الملف: $(wc -l < main.py) سطر"
+        else
+          echo "❌ main.py غير موجود!"
+          exit 1
+        fi
     
     - name: Set up Python 3.9
       uses: actions/setup-python@v4
@@ -33,181 +62,61 @@ jobs:
           unzip \
           zip \
           libssl-dev \
-          libffi-dev \
-          autoconf \
-          libtool \
-          pkg-config \
-          wget \
-          curl
+          libffi-dev
     
     - name: Install Python Dependencies
       run: |
-        python3 -m pip install --upgrade pip wheel setuptools virtualenv
-        python3 -m pip install buildozer cython==0.29.33 pillow
+        pip3 install --upgrade pip wheel setuptools
+        pip3 install buildozer cython==0.29.33
     
-    - name: Create Icon
+    - name: Fix Buildozer Path Issue
       run: |
-        if [ ! -f "icon.png" ]; then
-          echo "📱 إنشاء أيقونة التطبيق..."
-          wget -q -O icon.png "https://img.icons8.com/color/512/000000/film-reel.png"
-        fi
-    
-    - name: Create Buildozer Spec
-      run: |
-        echo "📝 إنشاء ملف buildozer.spec..."
-        
-        # محتوى ملف buildozer.spec
-        cat > buildozer.spec << 'EOF'
-[app]
-
-# عنوان التطبيق
-title = SpeedFlix
-
-# اسم الحزمة (يجب أن يكون فريداً)
-package.name = com.speedflix.movies
-
-# اسم المجلد
-package.domain = org.speedflix
-
-# رقم إصدار التطبيق
-version = 1.0
-
-# رقم الإصدار المطلوب
-requirements = python3,kivy==2.2.1,requests,urllib3,certifi,android
-
-# إصدار Android الأدنى
-android.minapi = 21
-
-# إصدار Android المستهدف
-android.api = 33
-
-# إصدار Android للبناء
-android.ndk = 25b
-
-# الأذونات
-android.permissions = INTERNET,ACCESS_NETWORK_STATE,WAKE_LOCK
-
-# السماح بالوصول للإنترنت
-android.allow_backup = True
-
-# التوجه
-orientation = portrait
-
-# النافذة كاملة
-fullscreen = 0
-
-# نقطة الدخول
-source.dir = .
-
-# الملف الرئيسي
-source.main = main.py
-
-# استبعاد الملفات غير الضرورية
-source.exclude_exts = spec,pyc,pyo,git,md
-
-# رمز التطبيق
-app.orientation = portrait
-
-# استخدام AndroidX
-android.enable_androidx = True
-
-# بناء لـ arm64 فقط
-android.arch = arm64-v8a
-
-# حجم الذاكرة
-android.minsdk = 21
-android.maxsdk = 33
-
-# خيارات Gradle
-android.gradle_dependencies = 'com.android.support:support-v4:28.0.0'
-
-# شاشة البداية
-presplash.filename = %(source.dir)s/icon.png
-
-# أيقونة التطبيق
-icon.filename = %(source.dir)s/icon.png
-
-# نوع APK
-build_type = debug
-
-# إعدادات الذاكرة
-android.accept_sdk_license = true
-EOF
-        
-        echo "✅ تم إنشاء buildozer.spec"
-        echo "=== محتوى الملف ==="
-        cat buildozer.spec
-    
-    - name: Initialize Buildozer
-      run: |
-        echo "🔧 تهيئة Buildozer..."
-        
-        # إنشاء المجلدات الأساسية
-        mkdir -p .buildozer/android/platform
-        mkdir -p bin
-        
-        # نسخ python-for-android إذا لم يكن موجوداً
-        if [ ! -d ".buildozer/android/platform/python-for-android" ]; then
-          echo "📦 تنزيل python-for-android..."
-          cd .buildozer/android/platform
-          git clone --depth=1 https://github.com/kivy/python-for-android.git
-          cd python-for-android
-          pip3 install -e .
-          cd ../../../../  # العودة للمجلد الرئيسي
+        echo "🔧 إصلاح مشكلة المسار..."
+        # نسخ buildozer.spec للمسار الصحيح إذا لزم الأمر
+        if [ -f "buildozer.spec" ]; then
+          echo "التحقق من محتوى buildozer.spec:"
+          # إزالة أي أسطر مكررة
+          awk '!seen[$0]++' buildozer.spec > temp.spec
+          mv temp.spec buildozer.spec
+          echo "تم إصلاح الملف"
         fi
     
     - name: Build APK
       run: |
         echo "🚀 بدء بناء APK..."
+        echo "المسار الحالي: $(pwd)"
         
-        # 1. التحقق من الإعدادات
-        echo "الخطوة 1: التحقق من الإعدادات..."
-        buildozer -v android update
+        # 1. التحقق من أن buildozer.spec في المسار الصحيح
+        if [ ! -f "buildozer.spec" ]; then
+          echo "❌ خطأ: buildozer.spec غير موجود في $(pwd)"
+          exit 1
+        fi
         
-        # 2. التنظيف
-        echo "الخطوة 2: التنظيف..."
-        buildozer -v android clean || true
+        # 2. بناء مباشر بدون تنظيف أولي
+        echo "بناء APK مباشرة..."
+        buildozer android debug
         
-        # 3. البناء
-        echo "الخطوة 3: البناء..."
-        timeout 1800 buildozer -v android debug  # 30 دقيقة
-        
-    - name: Check APK File
+    - name: Check and Upload APK
       run: |
         echo "🔍 البحث عن ملف APK..."
-        sleep 5
         
         if ls bin/*.apk 1> /dev/null 2>&1; then
           echo "✅ تم بناء APK بنجاح!"
+          echo "قائمة ملفات APK:"
           ls -la bin/*.apk
-          
-          # عرض حجم APK
-          for apk in bin/*.apk; do
-            echo "📦 $apk - $(du -h "$apk" | cut -f1)"
-          done
         else
           echo "❌ لم يتم إنشاء APK"
           echo "=== محاولة بديلة ==="
           
-          # محاولة بناء مباشر
-          if [ -d ".buildozer/android/platform/python-for-android" ]; then
-            cd .buildozer/android/platform/python-for-android
-            python3 -m pythonforandroid.toolchain apk \
-              --private ../app \
-              --package com.speedflix.movies \
-              --name SpeedFlix \
-              --version 1.0 \
-              --bootstrap sdl2 \
-              --requirements python3,kivy,requests \
-              --arch arm64-v8a
-            mv *.apk ../../../../bin/ 2>/dev/null || true
-          fi
+          # محاولة مع الـ verbose لمعرفة الخطأ
+          echo "المحاولة مع تفاصيل أكثر..."
+          buildozer -v android debug 2>&1 | tail -50
+          exit 1
         fi
         
     - name: Upload APK
-      if: success() || failure()
       uses: actions/upload-artifact@v4
       with:
         name: SpeedFlix-APK
-        path: bin/
+        path: bin/*.apk
         retention-days: 7
