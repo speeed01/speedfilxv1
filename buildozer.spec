@@ -8,7 +8,8 @@ source.include_exts = py,png,jpg,kv,json
 
 version = 1.0
 
-requirements = python3,kivy,requests
+# منع بناء libffi من المصدر (حل autoconf النهائي)
+requirements = python3,kivy,requests,libffi
 
 orientation = portrait
 fullscreen = 1
