@@ -33,6 +33,12 @@ jobs:
           libncurses5 \
           libtinfo5
 
+    - name: Force Java 17
+      run: |
+        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+        echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> $GITHUB_PATH
+        java -version
+
     - name: Install Buildozer
       run: |
         python -m pip install --upgrade pip
@@ -59,10 +65,8 @@ jobs:
         mkdir -p $ANDROID_HOME/tools/bin
         ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
 
-        # 🔥 قبول كل الرخص (بدون سؤال)
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 
-        # 🔥 أدوات متوافقة فقط
         $ANDROID_HOME/tools/bin/sdkmanager \
           "platform-tools" \
           "platforms;android-33" \
@@ -79,4 +83,3 @@ jobs:
       with:
         name: SpeedFlix-APK
         path: bin/*.apk
-
