@@ -1,122 +1,49 @@
-          
-name: Build SpeedFlix APK
+        name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build-apk:
-    runs-on: ubuntu-22.04
-    
+  build:
+    runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Check Files Before Build
-      run: |
-        echo "📁 التحقق من الملفات الموجودة..."
-        echo "المسار الحالي: $(pwd)"
-        echo "قائمة الملفات:"
-        ls -la
-        
-        echo ""
-        echo "=== التحقق من buildozer.spec ==="
-        if [ -f "buildozer.spec" ]; then
-          echo "✅ buildozer.spec موجود"
-          echo "حجم الملف: $(wc -l < buildozer.spec) سطر"
-          echo "المحتوى (الأول 10 أسطر):"
-          head -10 buildozer.spec
-        else
-          echo "❌ buildozer.spec غير موجود!"
-          exit 1
-        fi
-        
-        echo ""
-        echo "=== التحقق من main.py ==="
-        if [ -f "main.py" ]; then
-          echo "✅ main.py موجود"
-          echo "حجم الملف: $(wc -l < main.py) سطر"
-        else
-          echo "❌ main.py غير موجود!"
-          exit 1
-        fi
-    
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
-    
-    - name: Install System Dependencies
+        python-version: 3.10
+
+    - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
+        sudo apt update
+        sudo apt install -y \
           build-essential \
-          git \
-          python3-pip \
-          openjdk-11-jdk \
-          zlib1g-dev \
           ccache \
-          libncurses5 \
-          libncursesw5 \
-          unzip \
+          git \
           zip \
-          libssl-dev \
-          libffi-dev
-    
-    - name: Install Python Dependencies
-      run: |
-        pip3 install --upgrade pip wheel setuptools
-        pip3 install buildozer cython==0.29.33
-    
-    - name: Fix Buildozer Path Issue
-      run: |
-        echo "🔧 إصلاح مشكلة المسار..."
-        # نسخ buildozer.spec للمسار الصحيح إذا لزم الأمر
-        if [ -f "buildozer.spec" ]; then
-          echo "التحقق من محتوى buildozer.spec:"
-          # إزالة أي أسطر مكررة
-          awk '!seen[$0]++' buildozer.spec > temp.spec
-          mv temp.spec buildozer.spec
-          echo "تم إصلاح الملف"
-        fi
-    
+          unzip \
+          openjdk-17-jdk \
+          python3-pip \
+          libncurses5 \
+          libstdc++6 \
+          zlib1g-dev
+
+        pip install --upgrade pip
+        pip install buildozer cython
+
     - name: Build APK
       run: |
-        echo "🚀 بدء بناء APK..."
-        echo "المسار الحالي: $(pwd)"
-        
-        # 1. التحقق من أن buildozer.spec في المسار الصحيح
-        if [ ! -f "buildozer.spec" ]; then
-          echo "❌ خطأ: buildozer.spec غير موجود في $(pwd)"
-          exit 1
-        fi
-        
-        # 2. بناء مباشر بدون تنظيف أولي
-        echo "بناء APK مباشرة..."
-        buildozer android debug
-        
-    - name: Check and Upload APK
-      run: |
-        echo "🔍 البحث عن ملف APK..."
-        
-        if ls bin/*.apk 1> /dev/null 2>&1; then
-          echo "✅ تم بناء APK بنجاح!"
-          echo "قائمة ملفات APK:"
-          ls -la bin/*.apk
-        else
-          echo "❌ لم يتم إنشاء APK"
-          echo "=== محاولة بديلة ==="
-          
-          # محاولة مع الـ verbose لمعرفة الخطأ
-          echo "المحاولة مع تفاصيل أكثر..."
-          buildozer -v android debug 2>&1 | tail -50
-          exit 1
-        fi
-        
+        buildozer -v android debug
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: SpeedFlix-APK
         path: bin/*.apk
-        retention-days: 7
+  
