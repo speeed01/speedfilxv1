@@ -6,9 +6,8 @@ package.domain = org.speedflix
 source.dir = .
 source.include_exts = py,png,jpg,kv,json
 
-version = 1.0
+version = 1.1
 
-# استخدام libffi الجاهز + p4a الحديث
 requirements = python3,kivy,requests,libffi
 
 orientation = portrait
@@ -24,7 +23,7 @@ android.build_tools_version = 36.0.0
 
 android.archs = arm64-v8a,armeabi-v7a
 
-# 🔥 هذا هو السطر الحاسم
+# 🔑 إجبار python-for-android الحديث
 p4a.branch = master
 
 [buildozer]
