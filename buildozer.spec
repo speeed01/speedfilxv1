@@ -8,7 +8,7 @@ source.include_exts = py,png,jpg,kv,json
 
 version = 1.0
 
-# منع بناء libffi من المصدر (حل autoconf النهائي)
+# استخدام libffi الجاهز + p4a الحديث
 requirements = python3,kivy,requests,libffi
 
 orientation = portrait
@@ -23,6 +23,9 @@ android.ndk = 25b
 android.build_tools_version = 36.0.0
 
 android.archs = arm64-v8a,armeabi-v7a
+
+# 🔥 هذا هو السطر الحاسم
+p4a.branch = master
 
 [buildozer]
 log_level = 2
