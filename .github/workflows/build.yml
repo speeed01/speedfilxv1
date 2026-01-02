@@ -1,3 +1,4 @@
+
 name: Build SpeedFlix APK
 
 on:
@@ -32,48 +33,79 @@ jobs:
           unzip \
           zip \
           libssl-dev \
-          libffi-dev
+          libffi-dev \
+          autoconf \
+          libtool \
+          pkg-config \
+          wget \
+          curl
     
     - name: Install Python Dependencies
       run: |
-        pip3 install --upgrade pip wheel setuptools
-        pip3 install buildozer cython==0.29.33 pillow
+        python3 -m pip install --upgrade pip wheel setuptools virtualenv
+        python3 -m pip install buildozer cython==0.29.33 pillow
+        python3 -m pip install python-for-android
     
-    - name: Create Icon if Missing
+    - name: Create Icon
       run: |
         if [ ! -f "icon.png" ]; then
-          echo "إنشاء أيقونة افتراضية..."
+          echo "📱 إنشاء أيقونة التطبيق..."
           wget -O icon.png "https://img.icons8.com/color/512/000000/film-reel.png"
         fi
     
-    - name: Check Buildozer Spec
+    - name: Pre-install python-for-android
       run: |
-        echo "✅ التحقق من ملف buildozer.spec..."
-        if [ -f "buildozer.spec" ]; then
-          echo "✓ الملف موجود"
-          # التحقق من عدم وجود أسطر مكررة
-          echo "التحقق من التكرارات..."
-          duplicates=$(grep -n "android.allow_backup" buildozer.spec | wc -l)
-          if [ $duplicates -gt 1 ]; then
-            echo "⚠️  يوجد تكرار في android.allow_backup"
-            # إصلاح الملف تلقائياً
-            awk '!seen[$0]++' buildozer.spec > buildozer.spec.tmp && mv buildozer.spec.tmp buildozer.spec
-            echo "✓ تم إصلاح الملف"
-          fi
-        else
-          echo "✗ الملف غير موجود، سيتم إنشاؤه"
-          buildozer init
-        fi
+        echo "📦 تنزيل python-for-android مسبقاً..."
+        mkdir -p .buildozer/android/platform
+        cd .buildozer/android/platform
+        git clone --depth=1 https://github.com/kivy/python-for-android.git
+        cd python-for-android
+        pip3 install -e .
+        cd ../../../../  # العودة للمجلد الرئيسي
     
-    - name: Build APK
+    - name: Build APK Step by Step
       run: |
-        echo "بدء بناء APK..."
-        buildozer -v android clean
-        buildozer -v android debug
+        echo "🚀 بدء بناء APK خطوة بخطوة..."
+        
+        # الخطوة 1: التحقق من الإعدادات
+        echo "1. التحقق من الإعدادات..."
+        buildozer -v android update
+        
+        # الخطوة 2: تنظيف فقط (بدون python-for-android)
+        echo "2. التنظيف الأولي..."
+        if [ -d ".buildozer/android/platform/python-for-android" ]; then
+          buildozer -v android clean
+        else
+          echo "⚠️  تخطي التنظيف - python-for-android غير موجود"
+        fi
+        
+        # الخطوة 3: تنزيل التبعيات
+        echo "3. تنزيل التبعيات..."
+        buildozer -v android
+        
+        # الخطوة 4: البناء
+        echo "4. البدء في البناء..."
+        buildozer -v android debug 2>&1 | tail -100
+        
+    - name: Check and Upload APK
+      run: |
+        echo "🔍 البحث عن ملف APK..."
+        if ls bin/*.apk 1> /dev/null 2>&1; then
+          echo "✅ تم بناء APK بنجاح!"
+          ls -la bin/*.apk
+        else
+          echo "❌ لم يتم إنشاء APK"
+          echo "=== محاولة إصلاح ==="
+          # محاولة بناء مباشر
+          cd .buildozer/android/platform/python-for-android
+          python3 -m pythonforandroid.toolchain clean_builds
+          cd ../../../../  # العودة للمجلد الرئيسي
+          buildozer android debug
+        fi
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: SpeedFlix-APK
         path: bin/*.apk
-        retention-days: 7
+        if-no-files-found: error
